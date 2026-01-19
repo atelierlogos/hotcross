@@ -13,6 +13,12 @@
 
 Hotcross is an MCP-powered code intelligence relay that provides persistent and portable context storage using a `mem://` format with [Clickhouse chDB](https://github.com/chdb-io/chdb) and a thoughtfully defined graph-like data model.
 
+## Get an API key
+
+Chat with James for any commercial inquiries.
+
+<a href="https://cal.com/team/atelierlogos/get-a-hotcross-api-key"><img src="https://cal.com/book-with-cal-dark.svg" alt="Get an API Key.com"></a>
+
 ## Features
 
 - **🔐 Authenticated**: API key authentication for secure access
