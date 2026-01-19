@@ -178,7 +178,7 @@ All tools require authentication via API key.
 | `todo_list` | List todos with filters |
 | `todo_delete` | Delete a todo item |
 
-**Total: 37 authenticated tools**
+**Total: 37 tools** (28 tools on Free tier, 37 tools on Commercial)
 
 ## MCP Resources
 
@@ -282,12 +282,21 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 
 ## Pricing
 
-Flexible pricing based on your needs:
-- **Per-organization:** Fixed price for team seats
-- **Per-developer:** Individual subscriptions
-- **Custom:** Enterprise pricing available
+| Feature | Self-Hosted (Free) | Commercial |
+|---------|-------------------|------------|
+| **Price** | Free | **$75/developer/month** |
+| **Memory Portals** | ✅ Unlimited | ✅ Unlimited |
+| **Code Intelligence** | ✅ Full access | ✅ Full access |
+| **Session Management** | ✅ Full access | ✅ Full access |
+| **Projects** | ⚠️ 1 project only | ✅ Unlimited projects |
+| **Todo Management** | ❌ Not available | ✅ Full access |
+| **Document Management** | ❌ Not available | ✅ Full access |
+| **Support** | Community | Priority support |
+| **Commercial Use** | ❌ Not permitted | ✅ Permitted |
 
-[Book a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key) to discuss pricing.
+[Book a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key) to get started with Commercial.
+
+See [FEATURES.md](FEATURES.md) for detailed feature comparison.
 
 ## Support
 

@@ -15,6 +15,41 @@ _auth_manager: AuthManager | None = None
 _auth_enabled: bool = False
 
 
+class FeatureTier:
+    """Feature tier restrictions."""
+    
+    FREE = "free"
+    COMMERCIAL = "commercial"
+    
+    @staticmethod
+    def get_tier() -> str:
+        """Get current feature tier based on auth status."""
+        if not _auth_enabled:
+            return FeatureTier.FREE
+        return FeatureTier.COMMERCIAL
+    
+    @staticmethod
+    def is_feature_allowed(feature: str) -> bool:
+        """Check if a feature is allowed in current tier."""
+        tier = FeatureTier.get_tier()
+        
+        # Free tier restrictions
+        if tier == FeatureTier.FREE:
+            restricted_features = ["todo_management", "document_management"]
+            return feature not in restricted_features
+        
+        # Commercial tier has all features
+        return True
+    
+    @staticmethod
+    def get_project_limit() -> int | None:
+        """Get project limit for current tier. None means unlimited."""
+        tier = FeatureTier.get_tier()
+        if tier == FeatureTier.FREE:
+            return 1
+        return None  # Unlimited
+
+
 def init_auth(database_url: str | None = None) -> None:
     """Initialize authentication system.
     
@@ -58,6 +93,45 @@ def is_auth_enabled() -> bool:
         True if auth is enabled
     """
     return _auth_enabled
+
+
+def require_feature(feature: str) -> Callable:
+    """Decorator to require a specific feature tier.
+    
+    Args:
+        feature: Feature name to check (e.g., "todo_management", "document_management")
+        
+    Returns:
+        Wrapped function
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            if not FeatureTier.is_feature_allowed(feature):
+                tier = FeatureTier.get_tier()
+                return {
+                    "success": False,
+                    "error": f"This feature requires a Commercial plan. Current tier: {tier}",
+                    "upgrade_url": "https://cal.com/team/atelierlogos/get-a-hotcross-api-key"
+                }
+            
+            return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
+        
+        @wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            if not FeatureTier.is_feature_allowed(feature):
+                tier = FeatureTier.get_tier()
+                return {
+                    "success": False,
+                    "error": f"This feature requires a Commercial plan. Current tier: {tier}",
+                    "upgrade_url": "https://cal.com/team/atelierlogos/get-a-hotcross-api-key"
+                }
+            
+            return func(*args, **kwargs)
+        
+        return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+    
+    return decorator
 
 
 def require_auth(func: Callable) -> Callable:

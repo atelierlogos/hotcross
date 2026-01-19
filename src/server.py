@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from src.core.registry import PortalRegistry
-from src.core.middleware import require_auth, init_auth, is_auth_enabled
+from src.core.middleware import require_auth, init_auth, is_auth_enabled, require_feature, FeatureTier
 from src.uri.parser import MemoryURI
 
 logging.basicConfig(level=logging.INFO)
@@ -662,6 +662,7 @@ def code_query(
 # ============================================================================
 
 @mcp.tool()
+@mcp.tool()
 @require_auth
 def code_init_project(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -683,6 +684,20 @@ def code_init_project(
 
         from src.intel.graph import CodeGraph
         graph = CodeGraph(portal)
+        
+        # Check project limit for free tier
+        project_limit = FeatureTier.get_project_limit()
+        if project_limit is not None:
+            # Count existing projects
+            result = portal.query("SELECT COUNT(*) as count FROM projects")
+            existing_count = result.data[0]["count"] if result.data else 0
+            
+            if existing_count >= project_limit:
+                return {
+                    "success": False,
+                    "error": f"Project limit reached ({project_limit} project max on Free tier). Upgrade to Commercial for unlimited projects.",
+                    "upgrade_url": "https://cal.com/team/atelierlogos/get-a-hotcross-api-key"
+                }
 
         # Handle Field defaults
         actual_desc = description if isinstance(description, str) else None
@@ -855,6 +870,7 @@ def code_delete_project(
 
 @mcp.tool()
 @require_auth
+@require_feature("document_management")
 def code_index_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     directory: str = Field(description="Directory path to index"),
@@ -904,6 +920,7 @@ def code_index_documents(
 
 @mcp.tool()
 @require_auth
+@require_feature("document_management")
 def code_get_document(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     file_path: str = Field(description="Document file path"),
@@ -951,6 +968,7 @@ def code_get_document(
 
 @mcp.tool()
 @require_auth
+@require_feature("document_management")
 def code_list_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str | None = Field(default=None, description="Optional project name filter"),
@@ -994,6 +1012,7 @@ def code_list_documents(
 
 @mcp.tool()
 @require_auth
+@require_feature("document_management")
 def code_search_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     query: str = Field(description="Search query"),
@@ -1262,6 +1281,7 @@ def session_archive(
 
 @mcp.tool()
 @require_auth
+@require_feature("todo_management")
 def todo_create(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     title: str = Field(description="Todo title"),
@@ -1316,6 +1336,7 @@ def todo_create(
 
 @mcp.tool()
 @require_auth
+@require_feature("todo_management")
 def todo_update(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     todo_id: str = Field(description="Todo ID"),
@@ -1359,6 +1380,7 @@ def todo_update(
 
 @mcp.tool()
 @require_auth
+@require_feature("todo_management")
 def todo_get(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     todo_id: str = Field(description="Todo ID"),
@@ -1390,6 +1412,7 @@ def todo_get(
 
 @mcp.tool()
 @require_auth
+@require_feature("todo_management")
 def todo_list(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -1435,6 +1458,7 @@ def todo_list(
 
 @mcp.tool()
 @require_auth
+@require_feature("todo_management")
 def todo_delete(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     todo_id: str = Field(description="Todo ID"),

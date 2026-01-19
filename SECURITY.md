@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Hotcross, please report it by emailing **security@hotcross.dev** (or your preferred contact method). Please do not open a public issue.
+If you discover a security vulnerability in Hotcross, please report it by emailing **james@atelierlogos.studio** (or your preferred contact method). Please do not open a public issue.
 
 We take all security reports seriously and will respond within 48 hours.
 
