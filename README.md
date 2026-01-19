@@ -221,8 +221,24 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `HOTCROSS_API_KEY` | Yes | API key for authentication |
+| `DATABASE_URL` | Yes | PostgreSQL connection string for authentication |
+| `HOTCROSS_API_KEY` | Yes | Developer API key (get from your organization admin) |
+
+## Authentication & Pricing
+
+Hotcross uses organization-based authentication:
+
+- **Organizations** subscribe and pay for seats (e.g., 5 developers)
+- **Developers** within an org each get their own API key
+- Each developer runs the MCP server locally with their key
+- Authentication validates against PostgreSQL on every request
+
+**Pricing models supported:**
+- Per-organization with seat limits
+- Per-developer (1-seat organizations)
+- Hybrid (base fee + per-seat)
+
+See [Admin Scripts](scripts/admin/README.md) for provisioning details.
 
 ## License
 

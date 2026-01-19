@@ -98,8 +98,9 @@ def require_auth(func: Callable) -> Callable:
                 "error": f"Authentication failed: {auth_result.error}"
             }
         
-        # Add customer_id to kwargs
-        kwargs["_customer_id"] = auth_result.customer_id
+        # Add developer_id and organization_id to kwargs
+        kwargs["_developer_id"] = auth_result.developer_id
+        kwargs["_organization_id"] = auth_result.organization_id
         
         # Call the original function
         return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
@@ -139,8 +140,9 @@ def require_auth(func: Callable) -> Callable:
                 "error": f"Authentication failed: {auth_result.error}"
             }
         
-        # Add customer_id to kwargs
-        kwargs["_customer_id"] = auth_result.customer_id
+        # Add developer_id and organization_id to kwargs
+        kwargs["_developer_id"] = auth_result.developer_id
+        kwargs["_organization_id"] = auth_result.organization_id
         
         # Call the original function
         return func(*args, **kwargs)

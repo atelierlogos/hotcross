@@ -70,7 +70,7 @@ class AuthManager:
             api_key: The API key to validate
             
         Returns:
-            Authentication result
+            Authentication result with developer and organization info
         """
         if not api_key:
             return AuthResult(
@@ -83,14 +83,22 @@ class AuthManager:
         try:
             conn = await self._get_connection()
             
-            # Look up the key in customers table
+            # Look up the key in developers table and join with organizations
             row = await conn.fetchrow("""
                 SELECT 
-                    stripe_customer_id,
-                    subscription_status,
-                    api_key_revoked_at
-                FROM customers
-                WHERE api_key_hash = $1
+                    d.id as developer_id,
+                    d.organization_id,
+                    d.api_key_revoked_at,
+                    d.is_active,
+                    o.subscription_status,
+                    o.max_seats,
+                    (SELECT COUNT(*) FROM developers 
+                     WHERE organization_id = d.organization_id 
+                     AND is_active = true 
+                     AND api_key_revoked_at IS NULL) as active_seats
+                FROM developers d
+                JOIN organizations o ON d.organization_id = o.id
+                WHERE d.api_key_hash = $1
                 LIMIT 1
             """, key_hash)
 
@@ -100,34 +108,51 @@ class AuthManager:
                     error="Invalid API key"
                 )
             
-            # Check if revoked
+            # Check if developer is active
+            if not row['is_active']:
+                return AuthResult(
+                    allowed=False,
+                    error="Developer account is inactive"
+                )
+            
+            # Check if API key is revoked
             if row['api_key_revoked_at']:
                 return AuthResult(
                     allowed=False,
                     error="API key has been revoked"
                 )
 
-            # Check if subscription is active
+            # Check if organization subscription is active
             status = row['subscription_status']
             if status not in ('active', 'trialing'):
                 return AuthResult(
                     allowed=False,
-                    error=f"Subscription is {status}"
+                    error=f"Organization subscription is {status}"
+                )
+            
+            # Check if organization has exceeded seat limit
+            if row['active_seats'] > row['max_seats']:
+                return AuthResult(
+                    allowed=False,
+                    error=f"Organization has exceeded seat limit ({row['max_seats']} seats)"
                 )
 
             # Update last used timestamp
             await conn.execute("""
-                UPDATE customers
-                SET api_key_last_used_at = NOW()
+                UPDATE developers
+                SET api_key_last_used_at = NOW(),
+                    updated_at = NOW()
                 WHERE api_key_hash = $1
             """, key_hash)
 
-            customer_id = row['stripe_customer_id']
-            logger.info(f"Authenticated customer {customer_id}")
+            developer_id = row['developer_id']
+            organization_id = row['organization_id']
+            logger.info(f"Authenticated developer {developer_id} from org {organization_id}")
 
             return AuthResult(
                 allowed=True,
-                customer_id=customer_id
+                developer_id=developer_id,
+                organization_id=organization_id
             )
 
         except Exception as e:
