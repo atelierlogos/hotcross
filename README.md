@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/stars/atelierlogos/hotcross?style=social" alt="GitHub stars" />
 </p>
 
-> **MCP-powered code intelligence relay with persistent, portable context storage**
+> **MCP-powered local static code graph persistence for AI agents**
 
 Hotcross provides a `mem://` URI scheme for storing and querying structured data using [Clickhouse chDB](https://github.com/chdb-io/chdb), combined with tree-sitter-based code analysis for deep codebase understanding.
 
