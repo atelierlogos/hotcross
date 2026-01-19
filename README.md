@@ -17,7 +17,7 @@ Hotcross is an MCP-powered code intelligence relay that provides persistent and 
 
 Chat with James for any commercial inquiries.
 
-<a href="https://cal.com/team/atelierlogos/get-a-hotcross-api-key"><img src="https://cal.com/book-with-cal-dark.svg" alt="Get an API Key.com"></a>
+<a href="https://cal.com/team/atelierlogos/get-a-hotcross-api-key"><img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com"></a>
 
 ## Features
 
@@ -245,6 +245,10 @@ Hotcross uses organization-based authentication:
 - Hybrid (base fee + per-seat)
 
 See [Admin Scripts](scripts/admin/README.md) for provisioning details.
+
+## Aknowledgements
+
+Special things goes to the Model Context Protocol team, and specifically @idosal and @pja-ant for the amazing work they are doing on their respective SEPs, which served as the inspirational basis of the `mem://` approach. 
 
 ## License
 
