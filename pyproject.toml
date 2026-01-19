@@ -1,11 +1,11 @@
 [project]
-name = "memory-portals"
+name = "hotcross"
 version = "0.1.0"
-description = "Memory Portals MCP server - Portable context storage with chDB"
+description = "MCP-powered code intelligence relay with persistent context storage"
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "Elastic-2.0" }
 requires-python = ">=3.10"
-authors = [{ name = "Community", email = "community@example.com" }]
+authors = [{ name = "Atelier Logos", email = "hello@atelierlogos.com" }]
 keywords = ["mcp", "memory", "context", "chdb", "database"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -39,7 +39,7 @@ dev = [
 ]
 
 [project.scripts]
-memory-portals = "src.server:main"
+hotcross = "src.server:main"
 
 [build-system]
 requires = ["hatchling"]
