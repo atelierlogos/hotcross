@@ -276,12 +276,25 @@ def get_table_resource(namespace: str, portal_id: str, table: str) -> str:
 
 def main() -> None:
     """Run the Memory Portals MCP server."""
+    import os
+    
     logger.info("Starting Memory Portals MCP server")
     
-    # Initialize authentication (required)
-    init_auth()
-    logger.info("🔐 Authentication enabled - API keys required")
-    logger.info("   Set HOTCROSS_API_KEY environment variable to authenticate")
+    # Initialize authentication
+    try:
+        init_auth()
+        if is_auth_enabled():
+            logger.info("🔐 Authentication enabled - API keys required")
+            logger.info("   Set HOTCROSS_API_KEY environment variable to authenticate")
+        else:
+            logger.info("🏠 Self-hosted mode - authentication disabled")
+            logger.info("   For commercial use, please obtain an API key")
+    except ValueError as e:
+        # If DATABASE_URL is missing and not in self-hosted mode
+        if os.getenv("HOTCROSS_SELF_HOSTED", "").lower() != "true":
+            logger.error(f"❌ {e}")
+            logger.info("   Set DATABASE_URL or use HOTCROSS_SELF_HOSTED=true for personal use")
+            raise
     
     registry.load_discovered()
     mcp.run()

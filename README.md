@@ -8,14 +8,24 @@
   <img src="https://badge.mcpx.dev?type=server" alt="MCP Server" />
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv" /></a>
   <img src="https://img.shields.io/github/commit-activity/w/atelierlogos/hotcross" alt="GitHub commit activity" />
+  <img src="https://img.shields.io/github/stars/atelierlogos/hotcross?style=social" alt="GitHub stars" />
 </p>
 
+> **MCP-powered code intelligence relay with persistent, portable context storage**
 
-Hotcross is an MCP-powered code intelligence relay that provides persistent and portable context storage using a `mem://` format with [Clickhouse chDB](https://github.com/chdb-io/chdb) and a thoughtfully defined graph-like data model.
+Hotcross provides a `mem://` URI scheme for storing and querying structured data using [Clickhouse chDB](https://github.com/chdb-io/chdb), combined with tree-sitter-based code analysis for deep codebase understanding.
 
-## Get an API key
+## Why Hotcross?
 
-Chat with James for any commercial inquiries.
+- **Persistent Memory**: Your AI conversations and code analysis survive restarts
+- **Portable Storage**: ChDB files are self-contained and easy to backup/share
+- **SQL-Powered**: Query your data with familiar SQL syntax
+- **Code-Aware**: Understands symbols, dependencies, and references across languages
+- **Organization-Ready**: Built-in multi-tenant auth with seat management
+
+## Get an API Key
+
+Ready to use Hotcross? Book a call with James:
 
 <a href="https://cal.com/team/atelierlogos/get-a-hotcross-api-key"><img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com"></a>
 
@@ -33,21 +43,30 @@ Chat with James for any commercial inquiries.
 ## Installation
 
 ```bash
-# Using uv (recommended)
+# Using uvx (recommended - no installation needed)
+uvx --from git+https://github.com/atelierlogos/hotcross hotcross
+
+# Or install with uv
+uv pip install git+https://github.com/atelierlogos/hotcross
+
+# Or clone for development
+git clone https://github.com/atelierlogos/hotcross
+cd hotcross
 uv pip install -e .
 ```
 
 ## Quick Start
 
-Configure in Claude Desktop (`claude_desktop_config.json`):
+### Managed Service (Recommended)
+
+Get your API key by booking a call, then configure Claude Desktop:
 
 ```json
 {
   "mcpServers": {
     "hotcross": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "src.server"],
-      "cwd": "/path/to/hotcross",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
       "env": {
         "DATABASE_URL": "postgresql://user:password@host/database",
         "HOTCROSS_API_KEY": "hc_live_your_key_here"
@@ -57,13 +76,36 @@ Configure in Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-Or run directly:
+### Self-Hosted (Personal Use)
 
-```bash
-export DATABASE_URL="postgresql://..."
-export HOTCROSS_API_KEY="hc_live_..."
-uv run python -m src.server
+For personal, non-commercial use, run without authentication:
+
+```json
+{
+  "mcpServers": {
+    "hotcross": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
+      "env": {
+        "HOTCROSS_SELF_HOSTED": "true"
+      }
+    }
+  }
+}
 ```
+
+**Note:** Commercial use requires a paid license. See [LICENSE.md](LICENSE.md) for details.
+
+That's it! Start using all 37 tools in Claude.
+
+
+## Use Cases
+
+- **AI Context Persistence**: Store conversation history and context across sessions
+- **Codebase Analysis**: Index and query your entire codebase structure
+- **Documentation Management**: Searchable documentation with semantic understanding
+- **Project Memory**: Track todos, sessions, and project metadata
+- **Team Knowledge Base**: Shared memory portals for team collaboration
 
 ## MCP Tools
 
@@ -225,26 +267,33 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 
 ## Environment Variables
 
+### Managed Service
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string for authentication |
-| `HOTCROSS_API_KEY` | Yes | Developer API key (get from your organization admin) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string (provided with your API key) |
+| `HOTCROSS_API_KEY` | Yes | Your personal API key |
 
-## Authentication & Pricing
+### Self-Hosted
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `HOTCROSS_SELF_HOSTED` | Yes | Set to `true` to disable authentication |
 
-Hotcross uses organization-based authentication:
+**Note:** Self-hosted mode is for personal, non-commercial use only.
 
-- **Organizations** subscribe and pay for seats (e.g., 5 developers)
-- **Developers** within an org each get their own API key
-- Each developer runs the MCP server locally with their key
-- Authentication validates against PostgreSQL on every request
+## Pricing
 
-**Pricing models supported:**
-- Per-organization with seat limits
-- Per-developer (1-seat organizations)
-- Hybrid (base fee + per-seat)
+Flexible pricing based on your needs:
+- **Per-organization:** Fixed price for team seats
+- **Per-developer:** Individual subscriptions
+- **Custom:** Enterprise pricing available
 
-See [Admin Scripts](scripts/admin/README.md) for provisioning details.
+[Book a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key) to discuss pricing.
+
+## Support
+
+- 🐛 [Issue Tracker](https://github.com/atelierlogos/hotcross/issues)
+- 💬 [Discussions](https://github.com/atelierlogos/hotcross/discussions)
+- 📧 Email: support@atelierlogos.com
 
 ## Acknowledgements
 

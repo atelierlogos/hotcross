@@ -23,6 +23,13 @@ def init_auth(database_url: str | None = None) -> None:
     """
     global _auth_manager, _auth_enabled
     
+    # Check if running in self-hosted mode (no auth required)
+    if os.getenv("HOTCROSS_SELF_HOSTED", "").lower() == "true":
+        _auth_enabled = False
+        logger.info("🏠 Running in SELF-HOSTED mode (authentication disabled)")
+        logger.info("   For commercial use, please obtain an API key")
+        return
+    
     # Get database URL
     if database_url is None:
         database_url = os.getenv("DATABASE_URL")
