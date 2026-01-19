@@ -246,9 +246,9 @@ Hotcross uses organization-based authentication:
 
 See [Admin Scripts](scripts/admin/README.md) for provisioning details.
 
-## Aknowledgements
+## Acknowledgements
 
-Special things goes to the Model Context Protocol team, and specifically @idosal and @pja-ant for the amazing work they are doing on their respective SEPs, which served as the inspirational basis of the `mem://` approach. 
+Special thanks to the Model Context Protocol team, and specifically [@idosal](https://github.com/idosal) and [@pja-ant](https://github.com/pja-ant) for the amazing work they are doing on their respective SEPs, which served as the inspirational basis of the `mem://` approach. 
 
 ## License
 
