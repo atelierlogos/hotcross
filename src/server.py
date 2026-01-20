@@ -677,12 +677,13 @@ def code_init_project(
 
         from src.intel.graph import CodeGraph
         graph = CodeGraph(portal)
-        
+        graph.ensure_tables()  # Create tables before checking limits
+
         # Check project limit for free tier
         project_limit = FeatureTier.get_project_limit()
         if project_limit is not None:
             # Count existing projects
-            result = portal.query("SELECT COUNT(*) as count FROM projects")
+            result = portal.query("SELECT COUNT(*) as count FROM _ci_projects")
             existing_count = result.data[0]["count"] if result.data else 0
             
             if existing_count >= project_limit:

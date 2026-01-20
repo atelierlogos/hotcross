@@ -707,7 +707,7 @@ class CodeGraph:
             FROM _ci_session_messages
             WHERE session_id = '{session_id}'
         """)
-        next_seq = (result.data[0]["max_seq"] or 0) + 1 if result.data else 1
+        next_seq = (result[0]["max_seq"] or 0) + 1 if result else 1
 
         # Insert message
         self._portal._db.execute_command(f"""
@@ -759,7 +759,7 @@ class CodeGraph:
             LIMIT 1
         """)
 
-        return result.data[0] if result.data else None
+        return result[0] if result else None
 
     def get_session_messages(self, session_id: str, limit: int = 100) -> list[dict]:
         """Get messages for a session.
@@ -780,7 +780,7 @@ class CodeGraph:
             LIMIT {limit}
         """)
 
-        return result.data
+        return result
 
     def list_sessions(
         self,
@@ -817,7 +817,7 @@ class CodeGraph:
             LIMIT {limit}
         """)
 
-        return result.data
+        return result
 
     def archive_session(self, session_id: str) -> None:
         """Archive a session.
@@ -938,10 +938,10 @@ class CodeGraph:
             LIMIT 1
         """)
 
-        if not result.data:
+        if not result:
             raise ValueError(f"Todo {todo_id} not found")
 
-        current = result.data[0]
+        current = result[0]
 
         # Build update values
         new_status = status if status is not None else current["status"]
@@ -1000,7 +1000,7 @@ class CodeGraph:
             LIMIT 1
         """)
 
-        return result.data[0] if result.data else None
+        return result[0] if result else None
 
     def list_todos(
         self,
@@ -1057,7 +1057,7 @@ class CodeGraph:
             LIMIT {limit}
         """)
 
-        return result.data
+        return result
 
     def delete_todo(self, todo_id: str) -> None:
         """Delete a todo.
@@ -1545,7 +1545,13 @@ class CodeGraph:
         """
         self.ensure_tables()
 
-        conditions = [f"project_name = '{_escape(project_name)}'"]
+        # Look up project_id from project_name
+        project = self.get_project(project_name)
+        if not project:
+            return []
+        project_id = project["project_id"]
+
+        conditions = [f"project_id = '{project_id}'"]
         if name:
             if "%" in name:
                 conditions.append(f"name LIKE '{_escape(name)}'")
@@ -1685,8 +1691,15 @@ class CodeGraph:
             List of import records
         """
         self.ensure_tables()
+
+        # Look up project_id from project_name
+        project = self.get_project(project_name)
+        if not project:
+            return []
+        project_id = project["project_id"]
+
         return self._portal._db.query(
-            f"SELECT * FROM _ci_imports WHERE project_name = '{_escape(project_name)}' "
+            f"SELECT * FROM _ci_imports WHERE project_id = '{project_id}' "
             f"AND file_path = '{_escape(file_path)}' ORDER BY start_line"
         )
 
@@ -1882,7 +1895,13 @@ class CodeGraph:
         """
         self.ensure_tables()
 
-        conditions = [f"project_name = '{_escape(project_name)}'"]
+        # Look up project_id from project_name
+        project = self.get_project(project_name)
+        if not project:
+            return []
+        project_id = project["project_id"]
+
+        conditions = [f"project_id = '{project_id}'"]
         if file_path:
             conditions.append(f"file_path = '{_escape(file_path)}'")
 
@@ -1912,8 +1931,14 @@ class CodeGraph:
         """
         self.ensure_tables()
 
+        # Look up project_id from project_name
+        project = self.get_project(project_name)
+        if not project:
+            return []
+        project_id = project["project_id"]
+
         conditions = [
-            f"project_name = '{_escape(project_name)}'",
+            f"project_id = '{project_id}'",
             f"name = '{_escape(symbol_name)}'"
         ]
         if file_path:
@@ -1941,8 +1966,15 @@ class CodeGraph:
             List of export records
         """
         self.ensure_tables()
+
+        # Look up project_id from project_name
+        project = self.get_project(project_name)
+        if not project:
+            return []
+        project_id = project["project_id"]
+
         return self._portal._db.query(
-            f"SELECT * FROM _ci_exports WHERE project_name = '{_escape(project_name)}' "
+            f"SELECT * FROM _ci_exports WHERE project_id = '{project_id}' "
             f"AND file_path = '{_escape(file_path)}' ORDER BY start_line"
         )
 
