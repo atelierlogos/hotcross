@@ -179,12 +179,15 @@ def require_auth(func: Callable) -> Callable:
                 "error": f"Authentication failed: {auth_result.error}"
             }
         
-        # Add developer_id and organization_id to kwargs
+        # Add developer_id and organization_id to kwargs for tracking
         kwargs["_developer_id"] = auth_result.developer_id
         kwargs["_organization_id"] = auth_result.organization_id
         
+        # Filter out internal kwargs before calling the function
+        func_kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}
+        
         # Call the original function
-        return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
+        return await func(*args, **func_kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **func_kwargs)
     
     @wraps(func)
     def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -221,12 +224,15 @@ def require_auth(func: Callable) -> Callable:
                 "error": f"Authentication failed: {auth_result.error}"
             }
         
-        # Add developer_id and organization_id to kwargs
+        # Add developer_id and organization_id to kwargs for tracking
         kwargs["_developer_id"] = auth_result.developer_id
         kwargs["_organization_id"] = auth_result.organization_id
         
+        # Filter out internal kwargs before calling the function
+        func_kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}
+        
         # Call the original function
-        return func(*args, **kwargs)
+        return func(*args, **func_kwargs)
     
     # Return appropriate wrapper based on function type
     return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper

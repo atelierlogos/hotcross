@@ -316,17 +316,20 @@ from src.intel.indexer import CodeIndexer
 def code_index_file(
     portal_uri: str = Field(description="mem:// URI of the portal for code intelligence storage"),
     file_path: str = Field(description="Path to source file to index"),
+    project_name: str | None = Field(default=None, description="Project name to associate with this file (currently unused)"),
     force: bool = Field(default=False, description="Force re-indexing even if unchanged"),
 ) -> dict[str, Any]:
     """Index a single source file for code intelligence.
 
     Extracts symbols, types, imports, exports, scopes, and references using tree-sitter.
+    Note: project_name parameter is accepted for API consistency but not currently used.
     """
     try:
         uri = MemoryURI.parse(portal_uri)
         portal = registry.resolve(uri)
         indexer = CodeIndexer(portal)
 
+        # Note: project_name is not passed to indexer as it doesn't support it yet
         result = indexer.index_file(file_path, force=force)
 
         return {
@@ -409,12 +412,13 @@ def code_index_directory(
 @require_auth
 def code_find_symbol(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name to search within"),
     name: str | None = Field(default=None, description="Symbol name to search for (supports wildcards)"),
     kind: str | None = Field(default=None, description="Symbol kind filter (function, class, method, variable)"),
     file_pattern: str | None = Field(default=None, description="File path pattern to filter"),
     limit: int = Field(default=100, description="Maximum number of results"),
 ) -> dict[str, Any]:
-    """Search for symbols by name, kind, or file pattern.
+    """Search for symbols by name, kind, or file pattern within a project.
 
     Returns matching symbols with their locations and metadata.
     """
@@ -429,12 +433,14 @@ def code_find_symbol(
         actual_name = name if isinstance(name, str) else None
         actual_kind = kind if isinstance(kind, str) else None
         actual_pattern = file_pattern if isinstance(file_pattern, str) else None
+        actual_limit = limit if isinstance(limit, int) else 100
 
         symbols = graph.find_symbols(
+            project_name=project_name,
             name=actual_name,
             kind=actual_kind,
             file_pattern=actual_pattern,
-            limit=limit,
+            limit=actual_limit,
         )
 
         return {
@@ -451,9 +457,10 @@ def code_find_symbol(
 @require_auth
 def code_get_file_symbols(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name"),
     file_path: str = Field(description="File path to get symbols from"),
 ) -> dict[str, Any]:
-    """Get all symbols defined in a specific file.
+    """Get all symbols defined in a specific file within a project.
 
     Returns functions, classes, methods, and variables with their locations.
     """
@@ -464,7 +471,7 @@ def code_get_file_symbols(
         from src.intel.graph import CodeGraph
         graph = CodeGraph(portal)
 
-        symbols = graph.get_file_symbols(file_path)
+        symbols = graph.get_file_symbols(project_name, file_path)
 
         return {
             "success": True,
@@ -481,9 +488,10 @@ def code_get_file_symbols(
 @require_auth
 def code_get_imports(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name"),
     file_path: str = Field(description="File path to get imports from"),
 ) -> dict[str, Any]:
-    """Get all import statements from a file.
+    """Get all import statements from a file within a project.
 
     Returns imported modules and names with their locations.
     """
@@ -494,7 +502,7 @@ def code_get_imports(
         from src.intel.graph import CodeGraph
         graph = CodeGraph(portal)
 
-        imports = graph.get_file_imports(file_path)
+        imports = graph.get_file_imports(project_name, file_path)
 
         return {
             "success": True,
@@ -511,9 +519,10 @@ def code_get_imports(
 @require_auth
 def code_get_exports(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name"),
     file_path: str = Field(description="File path to get exports from"),
 ) -> dict[str, Any]:
-    """Get all exports from a file (public API surface).
+    """Get all exports from a file (public API surface) within a project.
 
     Returns exported symbols and their locations.
     """
@@ -524,7 +533,7 @@ def code_get_exports(
         from src.intel.graph import CodeGraph
         graph = CodeGraph(portal)
 
-        exports = graph.get_file_exports(file_path)
+        exports = graph.get_file_exports(project_name, file_path)
 
         return {
             "success": True,
@@ -541,9 +550,10 @@ def code_get_exports(
 @require_auth
 def code_get_dependencies(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name"),
     file_path: str | None = Field(default=None, description="File path to get dependencies for (or all if None)"),
 ) -> dict[str, Any]:
-    """Get dependency graph showing which files import which modules.
+    """Get dependency graph showing which files import which modules within a project.
 
     Returns file-to-file dependencies based on import statements.
     """
@@ -557,7 +567,7 @@ def code_get_dependencies(
         # Handle Field default
         actual_file = file_path if isinstance(file_path, str) else None
 
-        dependencies = graph.get_dependencies(actual_file)
+        dependencies = graph.get_dependencies(project_name, actual_file)
 
         return {
             "success": True,
@@ -573,10 +583,11 @@ def code_get_dependencies(
 @require_auth
 def code_find_references(
     portal_uri: str = Field(description="mem:// URI of the portal"),
+    project_name: str = Field(description="Project name"),
     symbol_name: str = Field(description="Symbol name to find references for"),
     file_path: str | None = Field(default=None, description="Optional file path to limit search"),
 ) -> dict[str, Any]:
-    """Find all references to a symbol (unresolved, syntax-based).
+    """Find all references to a symbol within a project (unresolved, syntax-based).
 
     Returns all locations where the symbol name appears in the code.
     """
@@ -590,7 +601,7 @@ def code_find_references(
         # Handle Field default
         actual_file = file_path if isinstance(file_path, str) else None
 
-        references = graph.find_references(symbol_name, actual_file)
+        references = graph.find_references(project_name, symbol_name, actual_file)
 
         return {
             "success": True,
@@ -1031,6 +1042,7 @@ def code_search_documents(
         
         # Handle Field defaults
         actual_project = project_name if isinstance(project_name, str) else None
+        actual_limit = limit if isinstance(limit, int) else 10
 
         # Get project ID if provided
         project_id = None
@@ -1042,7 +1054,7 @@ def code_search_documents(
         else:
             graph = CodeGraph(portal)
 
-        results = graph.search_documents(query, project_id=project_id, limit=limit)
+        results = graph.search_documents(query, project_id=project_id, limit=actual_limit)
 
         return {
             "success": True,
@@ -1194,8 +1206,11 @@ def session_get_messages(
 
         from src.intel.graph import CodeGraph
 
+        # Handle Field defaults
+        actual_limit = limit if isinstance(limit, int) else 100
+
         graph = CodeGraph(portal)
-        messages = graph.get_session_messages(session_id, limit=limit)
+        messages = graph.get_session_messages(session_id, limit=actual_limit)
 
         return {
             "success": True,
@@ -1225,6 +1240,10 @@ def session_list(
 
         from src.intel.graph import CodeGraph
 
+        # Handle Field defaults
+        actual_include_archived = include_archived if isinstance(include_archived, bool) else False
+        actual_limit = limit if isinstance(limit, int) else 50
+
         graph = CodeGraph(portal)
         project = graph.get_project(project_name)
         if not project:
@@ -1232,8 +1251,8 @@ def session_list(
 
         sessions = graph.list_sessions(
             project_id=project["project_id"],
-            include_archived=include_archived,
-            limit=limit,
+            include_archived=actual_include_archived,
+            limit=actual_limit,
         )
 
         return {
@@ -1432,6 +1451,13 @@ def todo_list(
 
         from src.intel.graph import CodeGraph
 
+        # Handle Field defaults
+        actual_status = status if isinstance(status, str) else None
+        actual_priority = priority if isinstance(priority, str) else None
+        actual_assigned_to = assigned_to if isinstance(assigned_to, str) else None
+        actual_file_path = file_path if isinstance(file_path, str) else None
+        actual_limit = limit if isinstance(limit, int) else 100
+
         graph = CodeGraph(portal)
         project = graph.get_project(project_name)
         if not project:
@@ -1439,11 +1465,11 @@ def todo_list(
 
         todos = graph.list_todos(
             project_id=project["project_id"],
-            status=status,
-            priority=priority,
-            assigned_to=assigned_to,
-            file_path=file_path,
-            limit=limit,
+            status=actual_status,
+            priority=actual_priority,
+            assigned_to=actual_assigned_to,
+            file_path=actual_file_path,
+            limit=actual_limit,
         )
 
         return {

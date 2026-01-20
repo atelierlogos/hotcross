@@ -1525,14 +1525,16 @@ class CodeGraph:
 
     def find_symbols(
         self,
+        project_name: str,
         name: str | None = None,
         kind: str | None = None,
         file_pattern: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
-        """Search for symbols.
+        """Search for symbols within a project.
 
         Args:
+            project_name: Project name to search within
             name: Symbol name pattern (supports % wildcards)
             kind: Symbol kind filter
             file_pattern: File path pattern (supports % wildcards)
@@ -1543,7 +1545,7 @@ class CodeGraph:
         """
         self.ensure_tables()
 
-        conditions = []
+        conditions = [f"project_name = '{_escape(project_name)}'"]
         if name:
             if "%" in name:
                 conditions.append(f"name LIKE '{_escape(name)}'")
@@ -1557,7 +1559,7 @@ class CodeGraph:
             else:
                 conditions.append(f"file_path = '{_escape(file_pattern)}'")
 
-        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        where = f"WHERE {' AND '.join(conditions)}"
 
         rows = self._portal._db.query(f"""
             SELECT symbol_id, file_path, name, qualified_name, kind,
@@ -1570,16 +1572,17 @@ class CodeGraph:
 
         return rows
 
-    def get_file_symbols(self, file_path: str) -> list[dict[str, Any]]:
-        """Get all symbols in a file.
+    def get_file_symbols(self, project_name: str, file_path: str) -> list[dict[str, Any]]:
+        """Get all symbols in a file within a project.
 
         Args:
+            project_name: Project name
             file_path: File path
 
         Returns:
             List of symbols in the file as dictionaries
         """
-        return self.find_symbols(file_pattern=file_path, limit=10000)
+        return self.find_symbols(project_name=project_name, file_pattern=file_path, limit=10000)
 
     # --- Type operations ---
 
@@ -1671,10 +1674,11 @@ class CodeGraph:
         self._insert_rows("_ci_imports", rows)
         return import_ids
 
-    def get_file_imports(self, file_path: str) -> list[dict[str, Any]]:
-        """Get imports for a file.
+    def get_file_imports(self, project_name: str, file_path: str) -> list[dict[str, Any]]:
+        """Get imports for a file within a project.
 
         Args:
+            project_name: Project name
             file_path: File path
 
         Returns:
@@ -1682,8 +1686,8 @@ class CodeGraph:
         """
         self.ensure_tables()
         return self._portal._db.query(
-            f"SELECT * FROM _ci_imports WHERE file_path = '{_escape(file_path)}' "
-            "ORDER BY start_line"
+            f"SELECT * FROM _ci_imports WHERE project_name = '{_escape(project_name)}' "
+            f"AND file_path = '{_escape(file_path)}' ORDER BY start_line"
         )
 
     # --- Export operations ---
@@ -1866,10 +1870,11 @@ class CodeGraph:
 
     # --- Query methods ---
 
-    def get_dependencies(self, file_path: str | None = None) -> list[dict[str, Any]]:
-        """Get dependency information.
+    def get_dependencies(self, project_name: str, file_path: str | None = None) -> list[dict[str, Any]]:
+        """Get dependency information for a project.
 
         Args:
+            project_name: Project name
             file_path: Optional file path to filter dependencies
 
         Returns:
@@ -1877,10 +1882,11 @@ class CodeGraph:
         """
         self.ensure_tables()
 
+        conditions = [f"project_name = '{_escape(project_name)}'"]
         if file_path:
-            where = f"WHERE file_path = '{_escape(file_path)}'"
-        else:
-            where = ""
+            conditions.append(f"file_path = '{_escape(file_path)}'")
+
+        where = f"WHERE {' AND '.join(conditions)}"
 
         rows = self._portal._db.query(f"""
             SELECT file_path, module_path, imported_names, import_kind, is_relative
@@ -1892,11 +1898,12 @@ class CodeGraph:
         return rows
 
     def find_references(
-        self, symbol_name: str, file_path: str | None = None
+        self, project_name: str, symbol_name: str, file_path: str | None = None
     ) -> list[dict[str, Any]]:
-        """Find references to a symbol.
+        """Find references to a symbol within a project.
 
         Args:
+            project_name: Project name
             symbol_name: Symbol name to search for
             file_path: Optional file path to limit search
 
@@ -1905,7 +1912,10 @@ class CodeGraph:
         """
         self.ensure_tables()
 
-        conditions = [f"name = '{_escape(symbol_name)}'"]
+        conditions = [
+            f"project_name = '{_escape(project_name)}'",
+            f"name = '{_escape(symbol_name)}'"
+        ]
         if file_path:
             conditions.append(f"file_path = '{_escape(file_path)}'")
 
@@ -1919,6 +1929,22 @@ class CodeGraph:
         """)
 
         return rows
+    
+    def get_file_exports(self, project_name: str, file_path: str) -> list[dict[str, Any]]:
+        """Get exports for a file within a project.
+
+        Args:
+            project_name: Project name
+            file_path: File path
+
+        Returns:
+            List of export records
+        """
+        self.ensure_tables()
+        return self._portal._db.query(
+            f"SELECT * FROM _ci_exports WHERE project_name = '{_escape(project_name)}' "
+            f"AND file_path = '{_escape(file_path)}' ORDER BY start_line"
+        )
 
     # --- Statistics ---
 
