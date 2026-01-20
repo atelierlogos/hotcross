@@ -29,6 +29,7 @@ dependencies = [
     # Authentication
     "asyncpg>=0.29",
     "stripe>=14.2.0",
+    "requests>=2.32.5",
 ]
 
 [project.optional-dependencies]

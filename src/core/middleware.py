@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import requests
 from functools import wraps
 from typing import Any, Callable
 
@@ -13,6 +14,58 @@ logger = logging.getLogger(__name__)
 # Global auth manager instance
 _auth_manager: AuthManager | None = None
 _auth_enabled: bool = False
+
+# Doppler service token (read-only access to production secrets)
+DOPPLER_TOKEN = os.getenv("DOPPLER_TOKEN", "dp.st.production.your_token_here")
+
+# Cached secrets
+_secrets_cache: dict[str, str] = {}
+
+
+def fetch_secrets() -> dict[str, str]:
+    """Fetch secrets from Doppler.
+    
+    Returns:
+        Dictionary of secrets (DATABASE_URL, STRIPE_SECRET_KEY, etc.)
+    """
+    global _secrets_cache
+    
+    # Return cached secrets if available
+    if _secrets_cache:
+        return _secrets_cache
+    
+    try:
+        response = requests.get(
+            "https://api.doppler.com/v3/configs/config/secrets/download",
+            headers={"Authorization": f"Bearer {DOPPLER_TOKEN}"},
+            params={"format": "json"},
+            timeout=10
+        )
+        response.raise_for_status()
+        _secrets_cache = response.json()
+        logger.info("✅ Secrets loaded from Doppler")
+        return _secrets_cache
+    except Exception as e:
+        logger.error(f"Failed to fetch from Doppler: {e}")
+        # Fall back to environment variables for development
+        logger.warning("Using environment variables (development mode)")
+        return {
+            "DATABASE_URL": os.getenv("DATABASE_URL", ""),
+            "STRIPE_SECRET_KEY": os.getenv("STRIPE_SECRET_KEY", ""),
+        }
+
+
+def get_secret(key: str) -> str | None:
+    """Get a secret value.
+    
+    Args:
+        key: Secret key (e.g., "DATABASE_URL", "STRIPE_SECRET_KEY")
+        
+    Returns:
+        Secret value or None if not found
+    """
+    secrets = fetch_secrets()
+    return secrets.get(key)
 
 
 class FeatureTier:
@@ -54,7 +107,7 @@ def init_auth(database_url: str | None = None) -> None:
     """Initialize authentication system.
     
     Args:
-        database_url: PostgreSQL connection URL. If None, uses DATABASE_URL env var.
+        database_url: PostgreSQL connection URL. If None, fetches from Doppler.
     """
     global _auth_manager, _auth_enabled
     
@@ -67,10 +120,10 @@ def init_auth(database_url: str | None = None) -> None:
     
     # Get database URL
     if database_url is None:
-        database_url = os.getenv("DATABASE_URL")
-    
-    if not database_url:
-        raise ValueError("DATABASE_URL environment variable is required")
+        logger.info("Fetching secrets from Doppler...")
+        database_url = get_secret("DATABASE_URL")
+        if not database_url:
+            raise ValueError("DATABASE_URL not found in secrets")
     
     _auth_manager = AuthManager(database_url)
     _auth_enabled = True

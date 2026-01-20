@@ -59,7 +59,7 @@ uv pip install -e .
 
 ### Managed Service (Recommended)
 
-Get your API key by booking a call, then configure Claude Desktop:
+Get your API key by [booking a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key), then configure Claude Desktop:
 
 ```json
 {
@@ -68,13 +68,14 @@ Get your API key by booking a call, then configure Claude Desktop:
       "command": "uvx",
       "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
       "env": {
-        "DATABASE_URL": "postgresql://user:password@host/database",
         "HOTCROSS_API_KEY": "hc_live_your_key_here"
       }
     }
   }
 }
 ```
+
+That's it! The database connection is managed automatically via Doppler.
 
 ### Self-Hosted (Personal Use)
 
@@ -253,9 +254,9 @@ uv run python examples/basic_usage.py
 ## Testing
 
 ```bash
-# Test authentication
+# Test authentication (for development only)
 export HOTCROSS_API_KEY="hc_live_..."
-export DATABASE_URL="postgresql://..."
+export DATABASE_URL="postgresql://..."  # Only needed for local development
 uv run python scripts/test_auth.py
 
 # Run test suite
@@ -270,8 +271,9 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 ### Managed Service
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string (provided with your API key) |
-| `HOTCROSS_API_KEY` | Yes | Your personal API key |
+| `HOTCROSS_API_KEY` | Yes | Your personal API key ([get one here](https://cal.com/team/atelierlogos/get-a-hotcross-api-key)) |
+
+**Note:** Database connection is automatically managed via Doppler - no DATABASE_URL needed!
 
 ### Self-Hosted
 | Variable | Required | Description |
