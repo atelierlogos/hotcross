@@ -57,7 +57,27 @@ uv pip install -e .
 
 ## Quick Start
 
-### Self-Hosted (Free - Personal Use)
+### Claude Code CLI (Recommended)
+
+The fastest way to get started with Claude Code:
+
+```bash
+# Self-hosted (free tier)
+claude mcp add hotcross -- uvx --from git+https://github.com/atelierlogos/hotcross hotcross
+
+# Commercial (with license key)
+claude mcp add hotcross -e HOTCROSS_LICENSE=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9... -- uvx --from git+https://github.com/atelierlogos/hotcross hotcross
+```
+
+To verify the installation:
+
+```bash
+claude mcp list
+```
+
+### Manual Configuration
+
+#### Self-Hosted (Free - Personal Use)
 
 No configuration needed! Just run it:
 
@@ -105,6 +125,68 @@ Get your license key by [booking a call](https://cal.com/team/atelierlogos/get-a
 - ✅ Document management
 - ✅ Priority support
 
+## Configuring with CLAUDE.md
+
+You can use a `CLAUDE.md` file in your project root to provide Claude Code with context about how to use Hotcross in your project. This file acts as persistent instructions that Claude reads at the start of each session.
+
+### Example CLAUDE.md
+
+```markdown
+# Project Configuration
+
+## Hotcross Memory Portal
+
+This project uses Hotcross for persistent code intelligence and memory.
+
+### Portal Configuration
+- **Portal URI**: `mem://myproject/default`
+- **Project Name**: `myproject`
+
+### Tool Usage Guidelines
+
+When working on this codebase:
+
+1. **Index the codebase** at the start of a session if not already indexed:
+   - Use `code_init_project` to initialize the project
+   - Use `code_index_directory` to index source files
+
+2. **Use code intelligence** for navigation:
+   - Use `code_find_symbol` to locate functions and classes
+   - Use `code_get_dependencies` to understand file relationships
+   - Use `code_find_references` to find usages of symbols
+
+3. **Track work with todos**:
+   - Use `todo_create` for new tasks
+   - Use `todo_list` to see current work items
+
+4. **Persist session context**:
+   - Use `session_create` to start a new conversation session
+   - Use `session_add_message` to save important context
+
+### Project-Specific Paths
+- Source code: `src/`
+- Tests: `tests/`
+- Documentation: `docs/`
+```
+
+### What to Include in CLAUDE.md
+
+| Section | Purpose |
+|---------|---------|
+| Portal URI | Define the `mem://` URI for your project's data |
+| Project Name | Consistent project identifier across sessions |
+| Tool Usage | Guidelines for which Hotcross tools to use and when |
+| Directory Structure | Help Claude understand your codebase layout |
+| Indexing Instructions | How to set up code intelligence for the project |
+| Workflow Preferences | Custom workflows for todos, sessions, etc. |
+
+### Multiple CLAUDE.md Files
+
+You can have multiple `CLAUDE.md` files at different levels:
+- **Root `CLAUDE.md`**: Project-wide configuration
+- **Subdirectory `CLAUDE.md`**: Module-specific instructions (e.g., `src/api/CLAUDE.md`)
+
+Claude Code will read all applicable `CLAUDE.md` files when working in a directory.
 
 ## Use Cases
 
@@ -206,6 +288,51 @@ Examples:
 - `mem://conversation/default` - Root portal reference
 - `mem://conversation/default/messages` - Specific table
 - `mem://conversation/default/messages?limit=10` - With query parameters
+
+## Storage Format
+
+Hotcross uses [chDB](https://github.com/chdb-io/chdb) (embedded ClickHouse) for storage. Unlike SQLite which uses a single `.db` file, ClickHouse stores data as a **directory structure**:
+
+```
+~/.memory-portals/
+└── myproject/
+    └── default.db/           # This is a directory, not a file
+        ├── data/default/     # Columnar table data
+        │   ├── _ci_symbols/
+        │   ├── _ci_files/
+        │   └── ...
+        ├── store/            # Internal ClickHouse storage
+        ├── metadata/         # Table schemas
+        └── tmp/              # Temporary query files
+```
+
+**Why directories instead of a single file?**
+
+ClickHouse is a columnar database optimized for analytics:
+- **Columnar storage**: Each column stored and compressed separately
+- **Better compression**: Similar data types compress efficiently together
+- **Faster queries**: Reads only the columns needed for each query
+- **Parallel I/O**: Multiple files can be read simultaneously
+
+**Still fully SQL-queryable**
+
+The directory structure is an implementation detail. You query data with standard SQL:
+
+```sql
+SELECT * FROM _ci_symbols WHERE kind = 'function' LIMIT 10
+```
+
+**Portable and self-contained**
+
+Each `.db` directory is self-contained. You can zip it up and move it to another machine:
+
+```bash
+# Backup a portal
+zip -r myproject-backup.zip ~/.memory-portals/myproject/default.db
+
+# Restore on another machine
+unzip myproject-backup.zip -d ~/.memory-portals/myproject/
+```
 
 ## Project Structure
 
