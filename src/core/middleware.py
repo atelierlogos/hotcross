@@ -1,71 +1,18 @@
-"""Authentication middleware for MCP server."""
+"""License-based middleware for MCP server."""
 
 import asyncio
 import logging
 import os
-import requests
 from functools import wraps
 from typing import Any, Callable
 
-from src.core.auth import AuthManager
+from src.core.license import LicenseInfo, get_license_from_env
 
 logger = logging.getLogger(__name__)
 
-# Global auth manager instance
-_auth_manager: AuthManager | None = None
-_auth_enabled: bool = False
-
-# Doppler service token (read-only access to production secrets)
-DOPPLER_TOKEN = os.getenv("DOPPLER_TOKEN", "dp.st.production.your_token_here")
-
-# Cached secrets
-_secrets_cache: dict[str, str] = {}
-
-
-def fetch_secrets() -> dict[str, str]:
-    """Fetch secrets from Doppler.
-    
-    Returns:
-        Dictionary of secrets (DATABASE_URL, STRIPE_SECRET_KEY, etc.)
-    """
-    global _secrets_cache
-    
-    # Return cached secrets if available
-    if _secrets_cache:
-        return _secrets_cache
-    
-    try:
-        response = requests.get(
-            "https://api.doppler.com/v3/configs/config/secrets/download",
-            headers={"Authorization": f"Bearer {DOPPLER_TOKEN}"},
-            params={"format": "json"},
-            timeout=10
-        )
-        response.raise_for_status()
-        _secrets_cache = response.json()
-        logger.info("✅ Secrets loaded from Doppler")
-        return _secrets_cache
-    except Exception as e:
-        logger.error(f"Failed to fetch from Doppler: {e}")
-        # Fall back to environment variables for development
-        logger.warning("Using environment variables (development mode)")
-        return {
-            "DATABASE_URL": os.getenv("DATABASE_URL", ""),
-            "STRIPE_SECRET_KEY": os.getenv("STRIPE_SECRET_KEY", ""),
-        }
-
-
-def get_secret(key: str) -> str | None:
-    """Get a secret value.
-    
-    Args:
-        key: Secret key (e.g., "DATABASE_URL", "STRIPE_SECRET_KEY")
-        
-    Returns:
-        Secret value or None if not found
-    """
-    secrets = fetch_secrets()
-    return secrets.get(key)
+# Global license instance
+_license: LicenseInfo | None = None
+_license_loaded: bool = False
 
 
 class FeatureTier:
@@ -76,86 +23,72 @@ class FeatureTier:
     
     @staticmethod
     def get_tier() -> str:
-        """Get current feature tier based on auth status."""
-        if not _auth_enabled:
-            return FeatureTier.FREE
-        return FeatureTier.COMMERCIAL
+        """Get current feature tier based on license."""
+        if _license and _license.is_commercial():
+            return FeatureTier.COMMERCIAL
+        return FeatureTier.FREE
     
     @staticmethod
     def is_feature_allowed(feature: str) -> bool:
         """Check if a feature is allowed in current tier."""
-        tier = FeatureTier.get_tier()
+        if _license and _license.has_feature(feature):
+            return True
         
         # Free tier restrictions
+        tier = FeatureTier.get_tier()
         if tier == FeatureTier.FREE:
             restricted_features = ["todo_management", "document_management"]
             return feature not in restricted_features
         
-        # Commercial tier has all features
         return True
     
     @staticmethod
     def get_project_limit() -> int | None:
         """Get project limit for current tier. None means unlimited."""
-        tier = FeatureTier.get_tier()
-        if tier == FeatureTier.FREE:
-            return 1
-        return None  # Unlimited
+        if _license and _license.is_commercial():
+            return None  # Unlimited
+        return 1  # Free tier
 
 
-def init_auth(database_url: str | None = None) -> None:
-    """Initialize authentication system.
+def init_license() -> None:
+    """Initialize license system."""
+    global _license, _license_loaded
     
-    Args:
-        database_url: PostgreSQL connection URL. If None, fetches from Doppler.
-    """
-    global _auth_manager, _auth_enabled
+    _license = get_license_from_env()
+    _license_loaded = True
     
-    # Check if running in self-hosted mode (no auth required)
-    if os.getenv("HOTCROSS_SELF_HOSTED", "").lower() == "true":
-        _auth_enabled = False
-        logger.info("🏠 Running in SELF-HOSTED mode (authentication disabled)")
-        logger.info("   For commercial use, please obtain an API key")
-        return
-    
-    # Get database URL
-    if database_url is None:
-        logger.info("Fetching secrets from Doppler...")
-        database_url = get_secret("DATABASE_URL")
-        if not database_url:
-            raise ValueError("DATABASE_URL not found in secrets")
-    
-    _auth_manager = AuthManager(database_url)
-    _auth_enabled = True
-    logger.info("Authentication initialized with PostgreSQL database")
+    if _license:
+        logger.info(f"✅ Commercial license active: {_license.org_name}")
+        logger.info(f"   Tier: {_license.tier}")
+        logger.info(f"   Features: {', '.join(_license.features)}")
+    else:
+        logger.info("🏠 Running in FREE tier")
+        logger.info("   Limitations: 1 project, no todos, no document management")
 
 
-def get_auth_manager() -> AuthManager | None:
-    """Get the global auth manager instance.
+def get_license() -> LicenseInfo | None:
+    """Get the current license.
     
     Returns:
-        Auth manager or None if auth is disabled
+        License info or None if free tier
     """
-    return _auth_manager
+    return _license
 
 
-def is_auth_enabled() -> bool:
-    """Check if authentication is enabled.
+def is_licensed() -> bool:
+    """Check if a valid commercial license is active.
     
     Returns:
-        True if auth is enabled
+        True if commercial license is active
     """
-    return _auth_enabled
+    return _license is not None and _license.is_commercial()
 
 
 def require_feature(feature: str) -> Callable:
-    """Decorator to require a specific feature tier.
+    """Decorator to require a specific feature.
     
     Args:
-        feature: Feature name to check (e.g., "todo_management", "document_management")
-        
-    Returns:
-        Wrapped function
+        feature: Feature name (e.g., "todo_management", "document_management")
     """
     def decorator(func: Callable) -> Callable:
         @wraps(func)
@@ -164,10 +97,8 @@ def require_feature(feature: str) -> Callable:
                 tier = FeatureTier.get_tier()
                 return {
                     "success": False,
-                    "error": f"This feature requires a Commercial plan. Current tier: {tier}",
-                    "upgrade_url": "https://cal.com/team/atelierlogos/get-a-hotcross-api-key"
+                    "error": f"This feature requires a Commercial plan. Current tier: {tier}"
                 }
-            
             return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
         
         @wraps(func)
@@ -176,116 +107,10 @@ def require_feature(feature: str) -> Callable:
                 tier = FeatureTier.get_tier()
                 return {
                     "success": False,
-                    "error": f"This feature requires a Commercial plan. Current tier: {tier}",
-                    "upgrade_url": "https://cal.com/team/atelierlogos/get-a-hotcross-api-key"
+                    "error": f"This feature requires a Commercial plan. Current tier: {tier}"
                 }
-            
             return func(*args, **kwargs)
         
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
     
     return decorator
-
-
-def require_auth(func: Callable) -> Callable:
-    """Decorator to require authentication for a function.
-    
-    Checks for API key and validates it against PostgreSQL.
-    If auth is disabled, allows all requests.
-    
-    Args:
-        func: Function to wrap
-        
-    Returns:
-        Wrapped function
-    """
-    @wraps(func)
-    async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-        # Skip auth if explicitly disabled (for testing)
-        if not _auth_enabled:
-            return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
-        
-        # Get API key from kwargs or environment
-        api_key = kwargs.get("api_key") or kwargs.get("_api_key") or os.getenv("HOTCROSS_API_KEY")
-        
-        if not api_key:
-            logger.warning("Authentication required but no API key provided")
-            return {
-                "success": False,
-                "error": "Authentication required. Set HOTCROSS_API_KEY environment variable."
-            }
-        
-        # Authenticate
-        if _auth_manager is None:
-            logger.error("Auth manager not initialized")
-            return {
-                "success": False,
-                "error": "Authentication system not initialized"
-            }
-        
-        auth_result = await _auth_manager.authenticate(api_key)
-        
-        if not auth_result.allowed:
-            logger.warning(f"Authentication failed: {auth_result.error}")
-            return {
-                "success": False,
-                "error": f"Authentication failed: {auth_result.error}"
-            }
-        
-        # Add developer_id and organization_id to kwargs for tracking
-        kwargs["_developer_id"] = auth_result.developer_id
-        kwargs["_organization_id"] = auth_result.organization_id
-        
-        # Filter out internal kwargs before calling the function
-        func_kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}
-        
-        # Call the original function
-        return await func(*args, **func_kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **func_kwargs)
-    
-    @wraps(func)
-    def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-        # Skip auth if explicitly disabled (for testing)
-        if not _auth_enabled:
-            return func(*args, **kwargs)
-        
-        # Get API key from kwargs or environment
-        api_key = kwargs.get("api_key") or kwargs.get("_api_key") or os.getenv("HOTCROSS_API_KEY")
-        
-        if not api_key:
-            logger.warning("Authentication required but no API key provided")
-            return {
-                "success": False,
-                "error": "Authentication required. Set HOTCROSS_API_KEY environment variable."
-            }
-        
-        # Authenticate
-        if _auth_manager is None:
-            logger.error("Auth manager not initialized")
-            return {
-                "success": False,
-                "error": "Authentication system not initialized"
-            }
-        
-        # Run async authenticate in sync context
-        loop = asyncio.get_event_loop()
-        auth_result = loop.run_until_complete(_auth_manager.authenticate(api_key))
-        
-        if not auth_result.allowed:
-            logger.warning(f"Authentication failed: {auth_result.error}")
-            return {
-                "success": False,
-                "error": f"Authentication failed: {auth_result.error}"
-            }
-        
-        # Add developer_id and organization_id to kwargs for tracking
-        kwargs["_developer_id"] = auth_result.developer_id
-        kwargs["_organization_id"] = auth_result.organization_id
-        
-        # Filter out internal kwargs before calling the function
-        func_kwargs = {k: v for k, v in kwargs.items() if not k.startswith("_")}
-        
-        # Call the original function
-        return func(*args, **func_kwargs)
-    
-    # Return appropriate wrapper based on function type
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper

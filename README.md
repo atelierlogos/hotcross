@@ -57,9 +57,32 @@ uv pip install -e .
 
 ## Quick Start
 
-### Managed Service (Recommended)
+### Self-Hosted (Free - Personal Use)
 
-Get your API key by [booking a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key), then configure Claude Desktop:
+No configuration needed! Just run it:
+
+```json
+{
+  "mcpServers": {
+    "hotcross": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"]
+    }
+  }
+}
+```
+
+**Free tier includes:**
+- ✅ Memory portals
+- ✅ Code intelligence  
+- ✅ Session management
+- ⚠️ 1 project limit
+- ❌ No todo management
+- ❌ No document management
+
+### Commercial (Unlimited Features)
+
+Get your license key by [booking a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key), then add it:
 
 ```json
 {
@@ -68,36 +91,19 @@ Get your API key by [booking a call](https://cal.com/team/atelierlogos/get-a-hot
       "command": "uvx",
       "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
       "env": {
-        "HOTCROSS_API_KEY": "hc_live_your_key_here"
+        "HOTCROSS_LICENSE": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
       }
     }
   }
 }
 ```
 
-That's it! The database connection is managed automatically via Doppler.
-
-### Self-Hosted (Personal Use)
-
-For personal, non-commercial use, run without authentication:
-
-```json
-{
-  "mcpServers": {
-    "hotcross": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
-      "env": {
-        "HOTCROSS_SELF_HOSTED": "true"
-      }
-    }
-  }
-}
-```
-
-**Note:** Commercial use requires a paid license. See [LICENSE.md](LICENSE.md) for details.
-
-That's it! Start using all 37 tools in Claude.
+**Commercial tier includes:**
+- ✅ Everything in free tier
+- ✅ Unlimited projects
+- ✅ Todo management
+- ✅ Document management
+- ✅ Priority support
 
 
 ## Use Cases
@@ -268,19 +274,15 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 
 ## Environment Variables
 
-### Managed Service
+### Self-Hosted (Free)
+**No environment variables needed!** Just run it.
+
+### Commercial
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `HOTCROSS_API_KEY` | Yes | Your personal API key ([get one here](https://cal.com/team/atelierlogos/get-a-hotcross-api-key)) |
+| `HOTCROSS_LICENSE` | Yes | Your JWT license key ([get one here](https://cal.com/team/atelierlogos/get-a-hotcross-api-key)) |
 
-**Note:** Database connection is automatically managed via Doppler - no DATABASE_URL needed!
-
-### Self-Hosted
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `HOTCROSS_SELF_HOSTED` | Yes | Set to `true` to disable authentication |
-
-**Note:** Self-hosted mode is for personal, non-commercial use only.
+**Note:** License keys are cryptographically signed and contain your organization info, tier, and expiration date.
 
 ## Pricing
 

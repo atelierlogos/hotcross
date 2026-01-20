@@ -427,9 +427,11 @@ source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },
     { name = "chdb" },
+    { name = "cryptography" },
     { name = "mcp", extra = ["cli"] },
     { name = "pyarrow" },
     { name = "pydantic" },
+    { name = "pyjwt" },
     { name = "requests" },
     { name = "stripe" },
     { name = "tree-sitter" },
@@ -449,9 +451,11 @@ dev = [
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.29" },
     { name = "chdb", specifier = ">=2.0" },
+    { name = "cryptography", specifier = ">=46.0.3" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.0" },
     { name = "pyarrow", specifier = ">=14.0" },
     { name = "pydantic", specifier = ">=2.0" },
+    { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "requests", specifier = ">=2.32.5" },

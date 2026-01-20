@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from src.core.registry import PortalRegistry
-from src.core.middleware import require_auth, init_auth, is_auth_enabled, require_feature, FeatureTier
+from src.core.middleware import require_feature, init_license, is_licensed, get_license, FeatureTier
 from src.uri.parser import MemoryURI
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +23,6 @@ registry = PortalRegistry()
 
 
 @mcp.tool()
-@require_auth
 def memory_write(
     portal_uri: str = Field(description="mem:// URI of the portal (e.g., mem://conversation/default)"),
     table: str = Field(description="Target table name"),
@@ -50,7 +49,6 @@ def memory_write(
 
 
 @mcp.tool()
-@require_auth
 def memory_query(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     sql: str = Field(description="SQL query to execute (SELECT recommended)"),
@@ -77,7 +75,6 @@ def memory_query(
 
 
 @mcp.tool()
-@require_auth
 def memory_delete(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     table: str = Field(description="Table to delete from"),
@@ -110,7 +107,6 @@ def memory_delete(
 
 
 @mcp.tool()
-@require_auth
 def memory_view(
     portal_uri: str = Field(description="mem:// URI to view"),
 ) -> dict[str, Any]:
@@ -155,7 +151,6 @@ def memory_view(
 
 
 @mcp.tool()
-@require_auth
 def memory_list_tables(
     portal_uri: str = Field(description="mem:// URI of the portal"),
 ) -> dict[str, Any]:
@@ -176,7 +171,6 @@ def memory_list_tables(
 
 
 @mcp.tool()
-@require_auth
 def memory_drop_table(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     table: str = Field(description="Table name to drop"),
@@ -201,7 +195,6 @@ def memory_drop_table(
 
 
 @mcp.tool()
-@require_auth
 def memory_list_portals() -> dict[str, Any]:
     """List all registered memory portals.
 
@@ -280,14 +273,14 @@ def main() -> None:
     
     logger.info("Starting Memory Portals MCP server")
     
-    # Initialize authentication
+    # Initialize license system
     try:
-        init_auth()
-        if is_auth_enabled():
-            logger.info("🔐 Authentication enabled - API keys required")
-            logger.info("   Set HOTCROSS_API_KEY environment variable to authenticate")
+        init_license()
+        if is_licensed():
+            license = get_license()
+            logger.info(f"🔐 Commercial license active: {license.org_name}")
         else:
-            logger.info("🏠 Self-hosted mode - authentication disabled")
+            logger.info("🏠 Free tier - limited features")
             logger.info("   For commercial use, please obtain an API key")
     except ValueError as e:
         # If DATABASE_URL is missing and not in self-hosted mode
@@ -312,7 +305,6 @@ from src.intel.indexer import CodeIndexer
 
 
 @mcp.tool()
-@require_auth
 def code_index_file(
     portal_uri: str = Field(description="mem:// URI of the portal for code intelligence storage"),
     file_path: str = Field(description="Path to source file to index"),
@@ -342,7 +334,6 @@ def code_index_file(
 
 
 @mcp.tool()
-@require_auth
 def code_index_directory(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     directory: str = Field(description="Directory path to index"),
@@ -409,7 +400,6 @@ def code_index_directory(
 
 
 @mcp.tool()
-@require_auth
 def code_find_symbol(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name to search within"),
@@ -454,7 +444,6 @@ def code_find_symbol(
 
 
 @mcp.tool()
-@require_auth
 def code_get_file_symbols(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -485,7 +474,6 @@ def code_get_file_symbols(
 
 
 @mcp.tool()
-@require_auth
 def code_get_imports(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -516,7 +504,6 @@ def code_get_imports(
 
 
 @mcp.tool()
-@require_auth
 def code_get_exports(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -547,7 +534,6 @@ def code_get_exports(
 
 
 @mcp.tool()
-@require_auth
 def code_get_dependencies(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -580,7 +566,6 @@ def code_get_dependencies(
 
 
 @mcp.tool()
-@require_auth
 def code_find_references(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -615,7 +600,6 @@ def code_find_references(
 
 
 @mcp.tool()
-@require_auth
 def code_get_stats(
     portal_uri: str = Field(description="mem:// URI of the portal"),
 ) -> dict[str, Any]:
@@ -642,7 +626,6 @@ def code_get_stats(
 
 
 @mcp.tool()
-@require_auth
 def code_query(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     sql: str = Field(description="SQL query against _ci_* tables"),
@@ -674,7 +657,6 @@ def code_query(
 
 @mcp.tool()
 @mcp.tool()
-@require_auth
 def code_init_project(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -739,7 +721,6 @@ def code_init_project(
 
 
 @mcp.tool()
-@require_auth
 def code_get_project(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -773,7 +754,6 @@ def code_get_project(
 
 
 @mcp.tool()
-@require_auth
 def code_list_projects(
     portal_uri: str = Field(description="mem:// URI of the portal"),
 ) -> dict[str, Any]:
@@ -801,7 +781,6 @@ def code_list_projects(
 
 
 @mcp.tool()
-@require_auth
 def code_update_project(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_id: str = Field(description="Project ID to update"),
@@ -846,7 +825,6 @@ def code_update_project(
 
 
 @mcp.tool()
-@require_auth
 def code_delete_project(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_id: str = Field(description="Project ID to delete"),
@@ -880,7 +858,6 @@ def code_delete_project(
 # ============================================================================
 
 @mcp.tool()
-@require_auth
 @require_feature("document_management")
 def code_index_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -930,7 +907,6 @@ def code_index_documents(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("document_management")
 def code_get_document(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -978,7 +954,6 @@ def code_get_document(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("document_management")
 def code_list_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1022,7 +997,6 @@ def code_list_documents(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("document_management")
 def code_search_documents(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1072,7 +1046,6 @@ def code_search_documents(
 # ============================================================================
 
 @mcp.tool()
-@require_auth
 def session_create(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     title: str = Field(description="Session title"),
@@ -1116,7 +1089,6 @@ def session_create(
 
 
 @mcp.tool()
-@require_auth
 def session_add_message(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     session_id: str = Field(description="Session ID"),
@@ -1159,7 +1131,6 @@ def session_add_message(
 
 
 @mcp.tool()
-@require_auth
 def session_get(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     session_id: str = Field(description="Session ID"),
@@ -1190,7 +1161,6 @@ def session_get(
 
 
 @mcp.tool()
-@require_auth
 def session_get_messages(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     session_id: str = Field(description="Session ID"),
@@ -1223,7 +1193,6 @@ def session_get_messages(
 
 
 @mcp.tool()
-@require_auth
 def session_list(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     project_name: str = Field(description="Project name"),
@@ -1266,7 +1235,6 @@ def session_list(
 
 
 @mcp.tool()
-@require_auth
 def session_archive(
     portal_uri: str = Field(description="mem:// URI of the portal"),
     session_id: str = Field(description="Session ID"),
@@ -1299,7 +1267,6 @@ def session_archive(
 # ============================================================================
 
 @mcp.tool()
-@require_auth
 @require_feature("todo_management")
 def todo_create(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1354,7 +1321,6 @@ def todo_create(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("todo_management")
 def todo_update(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1398,7 +1364,6 @@ def todo_update(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("todo_management")
 def todo_get(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1430,7 +1395,6 @@ def todo_get(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("todo_management")
 def todo_list(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1483,7 +1447,6 @@ def todo_list(
 
 
 @mcp.tool()
-@require_auth
 @require_feature("todo_management")
 def todo_delete(
     portal_uri: str = Field(description="mem:// URI of the portal"),
@@ -1516,5 +1479,5 @@ def todo_delete(
 # Server Initialization
 # ============================================================================
 
-from src.core.middleware import init_auth, is_auth_enabled
+
 
