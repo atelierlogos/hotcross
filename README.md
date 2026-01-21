@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![License](https://img.shields.io/badge/license-Elastic%202.0-blue.svg)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-MIT%202.0-blue.svg)](LICENSE.md)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 
@@ -231,7 +231,7 @@ npx @modelcontextprotocol/inspector uv run python -m src.server
 
 ## License
 
-Elastic License 2.0 - See [LICENSE.md](LICENSE.md) for details.
+MIT License - See [LICENSE.md](LICENSE.md) for details.
 
 ## Acknowledgments
 
