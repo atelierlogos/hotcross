@@ -1,43 +1,28 @@
 # Hotcross
 
-<p align="center">
-  <img src="assets/hotcross.png" alt="Hotcross" />
-</p>
+<div align="center">
+  <img src="assets/hotcross.png" alt="Hotcross Logo" width="200"/>
+</div>
 
-<p align="center">
-  <img src="https://badge.mcpx.dev?type=server" alt="MCP Server" />
-  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv" /></a>
-  <img src="https://img.shields.io/github/commit-activity/w/atelierlogos/hotcross" alt="GitHub commit activity" />
-  <img src="https://img.shields.io/github/stars/atelierlogos/hotcross?style=social" alt="GitHub stars" />
-</p>
+<div align="center">
 
-> **MCP-powered local static code graph persistence for AI agents**
+[![License](https://img.shields.io/badge/license-Elastic%202.0-blue.svg)](LICENSE.md)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 
-Hotcross provides a `mem://` URI scheme for storing and querying structured data using [Clickhouse chDB](https://github.com/chdb-io/chdb), combined with tree-sitter-based code analysis for deep codebase understanding.
+</div>
 
-## Why Hotcross?
-
-- **Persistent Memory**: Your AI conversations and code analysis survive restarts
-- **Portable Storage**: ChDB files are self-contained and easy to backup/share
-- **SQL-Powered**: Query your data with familiar SQL syntax
-- **Code-Aware**: Understands symbols, dependencies, and references across languages
-- **Organization-Ready**: Built-in multi-tenant auth with seat management
-
-## Get an API Key
-
-Ready to use Hotcross? Book a call with James:
-
-<a href="https://cal.com/team/atelierlogos/get-a-hotcross-api-key"><img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com"></a>
+Hotcross is an MCP-powered code intelligence relay that provides persistent and portable context storage using a `mem://` format with [Clickhouse chDB](https://github.com/chdb-io/chdb) and a thoughtfully defined graph-like data model.
 
 ## Features
 
-- **🔐 Authenticated**: API key authentication for secure access
 - **💾 Persistent Storage**: Data survives server restarts in portable `.db` files
 - **🔍 SQL Interface**: Query data using familiar SQL syntax
 - **📊 Schema Auto-Inference**: Tables are automatically created from data structure
 - **🧠 Code Intelligence**: Tree-sitter based code analysis with symbol extraction, dependency tracking, and reference finding
 - **📝 Session Management**: Track LLM conversation sessions with message history
 - **✅ Todo Management**: Built-in todo system with projects, priorities, and tags
+- **📚 Document Management**: Index and search documentation
 - **🔌 MCP Integration**: Full MCP tools and resources support
 
 ## Installation
@@ -57,29 +42,9 @@ uv pip install -e .
 
 ## Quick Start
 
-### Claude Code CLI (Recommended)
+### Configure in Claude Desktop or Kiro
 
-The fastest way to get started with Claude Code:
-
-```bash
-# Self-hosted (free tier)
-claude mcp add hotcross -- uvx --from git+https://github.com/atelierlogos/hotcross hotcross
-
-# Commercial (with license key)
-claude mcp add hotcross -e HOTCROSS_LICENSE=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9... -- uvx --from git+https://github.com/atelierlogos/hotcross hotcross
-```
-
-To verify the installation:
-
-```bash
-claude mcp list
-```
-
-### Manual Configuration
-
-#### Self-Hosted (Free - Personal Use)
-
-No configuration needed! Just run it:
+Add to your MCP config:
 
 ```json
 {
@@ -92,101 +57,21 @@ No configuration needed! Just run it:
 }
 ```
 
-**Free tier includes:**
-- ✅ Memory portals
-- ✅ Code intelligence  
-- ✅ Session management
-- ⚠️ 1 project limit
-- ❌ No todo management
-- ❌ No document management
-
-### Commercial (Unlimited Features)
-
-Get your license key by [booking a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key), then add it:
+Or for local development:
 
 ```json
 {
   "mcpServers": {
     "hotcross": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/atelierlogos/hotcross", "hotcross"],
-      "env": {
-        "HOTCROSS_LICENSE": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-      }
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.server"],
+      "cwd": "/path/to/hotcross"
     }
   }
 }
 ```
 
-**Commercial tier includes:**
-- ✅ Everything in free tier
-- ✅ Unlimited projects
-- ✅ Todo management
-- ✅ Document management
-- ✅ Priority support
-
-## Configuring with CLAUDE.md
-
-You can use a `CLAUDE.md` file in your project root to provide Claude Code with context about how to use Hotcross in your project. This file acts as persistent instructions that Claude reads at the start of each session.
-
-### Example CLAUDE.md
-
-```markdown
-# Project Configuration
-
-## Hotcross Memory Portal
-
-This project uses Hotcross for persistent code intelligence and memory.
-
-### Portal Configuration
-- **Portal URI**: `mem://myproject/default`
-- **Project Name**: `myproject`
-
-### Tool Usage Guidelines
-
-When working on this codebase:
-
-1. **Index the codebase** at the start of a session if not already indexed:
-   - Use `code_init_project` to initialize the project
-   - Use `code_index_directory` to index source files
-
-2. **Use code intelligence** for navigation:
-   - Use `code_find_symbol` to locate functions and classes
-   - Use `code_get_dependencies` to understand file relationships
-   - Use `code_find_references` to find usages of symbols
-
-3. **Track work with todos**:
-   - Use `todo_create` for new tasks
-   - Use `todo_list` to see current work items
-
-4. **Persist session context**:
-   - Use `session_create` to start a new conversation session
-   - Use `session_add_message` to save important context
-
-### Project-Specific Paths
-- Source code: `src/`
-- Tests: `tests/`
-- Documentation: `docs/`
-```
-
-### What to Include in CLAUDE.md
-
-| Section | Purpose |
-|---------|---------|
-| Portal URI | Define the `mem://` URI for your project's data |
-| Project Name | Consistent project identifier across sessions |
-| Tool Usage | Guidelines for which Hotcross tools to use and when |
-| Directory Structure | Help Claude understand your codebase layout |
-| Indexing Instructions | How to set up code intelligence for the project |
-| Workflow Preferences | Custom workflows for todos, sessions, etc. |
-
-### Multiple CLAUDE.md Files
-
-You can have multiple `CLAUDE.md` files at different levels:
-- **Root `CLAUDE.md`**: Project-wide configuration
-- **Subdirectory `CLAUDE.md`**: Module-specific instructions (e.g., `src/api/CLAUDE.md`)
-
-Claude Code will read all applicable `CLAUDE.md` files when working in a directory.
+That's it! All features are available - no authentication or configuration needed.
 
 ## Use Cases
 
@@ -198,7 +83,7 @@ Claude Code will read all applicable `CLAUDE.md` files when working in a directo
 
 ## MCP Tools
 
-All tools require authentication via API key.
+All 37 tools are available without any authentication.
 
 ### Memory Portal Tools (7)
 
@@ -267,8 +152,6 @@ All tools require authentication via API key.
 | `todo_list` | List todos with filters |
 | `todo_delete` | Delete a todo item |
 
-**Total: 37 tools** (28 tools on Free tier, 37 tools on Commercial)
-
 ## MCP Resources
 
 Access portals and tables as resources:
@@ -289,51 +172,6 @@ Examples:
 - `mem://conversation/default/messages` - Specific table
 - `mem://conversation/default/messages?limit=10` - With query parameters
 
-## Storage Format
-
-Hotcross uses [chDB](https://github.com/chdb-io/chdb) (embedded ClickHouse) for storage. Unlike SQLite which uses a single `.db` file, ClickHouse stores data as a **directory structure**:
-
-```
-~/.memory-portals/
-└── myproject/
-    └── default.db/           # This is a directory, not a file
-        ├── data/default/     # Columnar table data
-        │   ├── _ci_symbols/
-        │   ├── _ci_files/
-        │   └── ...
-        ├── store/            # Internal ClickHouse storage
-        ├── metadata/         # Table schemas
-        └── tmp/              # Temporary query files
-```
-
-**Why directories instead of a single file?**
-
-ClickHouse is a columnar database optimized for analytics:
-- **Columnar storage**: Each column stored and compressed separately
-- **Better compression**: Similar data types compress efficiently together
-- **Faster queries**: Reads only the columns needed for each query
-- **Parallel I/O**: Multiple files can be read simultaneously
-
-**Still fully SQL-queryable**
-
-The directory structure is an implementation detail. You query data with standard SQL:
-
-```sql
-SELECT * FROM _ci_symbols WHERE kind = 'function' LIMIT 10
-```
-
-**Portable and self-contained**
-
-Each `.db` directory is self-contained. You can zip it up and move it to another machine:
-
-```bash
-# Backup a portal
-zip -r myproject-backup.zip ~/.memory-portals/myproject/default.db
-
-# Restore on another machine
-unzip myproject-backup.zip -d ~/.memory-portals/myproject/
-```
-
 ## Project Structure
 
 ```
@@ -346,14 +184,11 @@ hotcross/
 │   │   ├── portal.py         # MemoryPortal class
 │   │   ├── database.py       # ChDBAdapter wrapper
 │   │   ├── metadata.py       # _mcp_metadata table management
-│   │   ├── registry.py       # Portal registry
-│   │   ├── auth.py           # AuthManager for PostgreSQL
-│   │   └── middleware.py     # @require_auth decorator
+│   │   └── registry.py       # Portal registry
 │   ├── uri/
 │   │   └── parser.py         # mem:// URI parsing
 │   ├── models/
 │   │   ├── schemas.py        # Pydantic models
-│   │   ├── auth.py           # Auth models
 │   │   └── code_intel.py     # Code intelligence models
 │   └── intel/
 │       ├── parser.py         # Tree-sitter parser
@@ -387,11 +222,6 @@ uv run python examples/basic_usage.py
 ## Testing
 
 ```bash
-# Test authentication (for development only)
-export HOTCROSS_API_KEY="hc_live_..."
-export DATABASE_URL="postgresql://..."  # Only needed for local development
-uv run python scripts/test_auth.py
-
 # Run test suite
 uv run pytest tests/
 
@@ -399,46 +229,10 @@ uv run pytest tests/
 npx @modelcontextprotocol/inspector uv run python -m src.server
 ```
 
-## Environment Variables
-
-### Self-Hosted (Free)
-**No environment variables needed!** Just run it.
-
-### Commercial
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `HOTCROSS_LICENSE` | Yes | Your JWT license key ([get one here](https://cal.com/team/atelierlogos/get-a-hotcross-api-key)) |
-
-**Note:** License keys are cryptographically signed and contain your organization info, tier, and expiration date.
-
-## Pricing
-
-| Feature | Self-Hosted (Free) | Commercial |
-|---------|-------------------|------------|
-| **Price** | Free | **$75/developer/month** |
-| **Memory Portals** | ✅ Unlimited | ✅ Unlimited |
-| **Code Intelligence** | ✅ Full access | ✅ Full access |
-| **Session Management** | ✅ Full access | ✅ Full access |
-| **Projects** | ⚠️ 1 project only | ✅ Unlimited projects |
-| **Todo Management** | ❌ Not available | ✅ Full access |
-| **Document Management** | ❌ Not available | ✅ Full access |
-| **Support** | Community | Priority support |
-| **Commercial Use** | ❌ Not permitted | ✅ Permitted |
-
-[Book a call](https://cal.com/team/atelierlogos/get-a-hotcross-api-key) to get started with Commercial.
-
-See [FEATURES.md](FEATURES.md) for detailed feature comparison.
-
-## Support
-
-- 🐛 [Issue Tracker](https://github.com/atelierlogos/hotcross/issues)
-- 💬 [Discussions](https://github.com/atelierlogos/hotcross/discussions)
-- 📧 Email: support@atelierlogos.com
-
-## Acknowledgements
-
-Special thanks to the Model Context Protocol team, and specifically [@idosal](https://github.com/idosal) and [@pja-ant](https://github.com/pja-ant) for the amazing work they are doing on their respective SEPs, which served as the inspirational basis of the `mem://` approach. 
-
 ## License
 
-Elastic License 2.0
+Elastic License 2.0 - See [LICENSE.md](LICENSE.md) for details.
+
+## Acknowledgments
+
+Special thanks to the Model Context Protocol team, and specifically [@idosal](https://github.com/idosal) and [@pja-ant](https://github.com/pja-ant) for the amazing work they are doing on their respective SEPs, which served as the inspirational basis of the `mem://` approach.
