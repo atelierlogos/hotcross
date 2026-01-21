@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://badge.mcpx.dev?type=server" alt="MCP Server" />
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv" /></a>
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="GitHub commit activity" />
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" />
   <img src="https://img.shields.io/github/commit-activity/w/atelierlogos/hotcross" alt="GitHub commit activity" />
   <img src="https://img.shields.io/github/stars/atelierlogos/hotcross?style=social" alt="GitHub stars" />
 </p>
